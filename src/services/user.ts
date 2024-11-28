@@ -23,10 +23,10 @@ export class UserService {
             past: [] as any[], // Explicitly type the arrays
             present: [] as any[],
         };
-    
+
         // Fetch the user from the repository
         const user = await this.userRepository.findOneBy({ id: userId });
-    
+
         // If the user doesn't exist, return or throw an error
         if (!user) {
             throw new Error(`User with ID ${userId} not found`);
@@ -38,31 +38,33 @@ export class UserService {
             throw new Error(`User ID is undefined`);
         }
         userObj.name = user.name;
-    
-        // Get past borrows where returnDate is less than the current date
-        const pastBorrows = await this.borrowRepository.find({
-            where: {
-                user: { id: user.id }, 
-                returnDate: LessThan(new Date()), 
-            },
-        });
-    
 
-        userObj.past = pastBorrows;
-    
-        // Get present borrows where returnDate is null or in the future
-        const presentBorrows = await this.borrowRepository.find({
+        // Get all borrows for the user
+        const borrows = await this.borrowRepository.find({
             where: {
-                user: { id: user.id },
-                returnDate: IsNull(), // OR add a condition for future dates if applicable
+            user: { id: user.id },
             },
+            relations: ["user", "book"]
         });
-    
-        userObj.present = presentBorrows;
-    
+
+        userObj.past = borrows
+            .filter(borrow => borrow.returnDate && borrow.returnDate < new Date())
+            .map(borrow => ({
+            bookName: borrow.book.name,
+            score: borrow.score,
+            }));
+
+        userObj.present = borrows
+            .filter(borrow => !borrow.returnDate || borrow.returnDate >= new Date())
+            .map(borrow => ({
+            bookName: borrow.book.name,
+            }));
+
+
+
         return userObj;
     }
-    
+
 
     async createUser(name: string) {
         const user = new User();
