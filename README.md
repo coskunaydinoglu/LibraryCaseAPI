@@ -12,6 +12,8 @@ This project is a RESTful API designed to manage a library's users, books, and b
 - npm start --> This will builld the application, run the migrations, create the database tables and start the app
 - Send API requets with postman
 
+Initial table creation scripts are in migration folder. You don't need to create tables manually or execute sql to create tables.
+
 ## Features
 
 - **User Management**: Create and list users.
