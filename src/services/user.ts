@@ -2,8 +2,7 @@ import { User } from "../entity/user.js";
 import { AppDataSource } from "../data-source.js";
 import { Book } from "../entity/book.js";
 import { Borrow } from "../entity/borrow.js";
-import { BookStatus } from "../enums/book-status.enum.js";
-import { IsNull, LessThan } from "typeorm";
+import { IsNull } from "typeorm";
 
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
@@ -16,11 +15,11 @@ export class UserService {
 
 
     async getUserById(userId: number) {
-        // Define a strongly-typed user object
+
         const userObj = {
             id: 0,
             name: "",
-            past: [] as any[], // Explicitly type the arrays
+            past: [] as any[],
             present: [] as any[],
         };
 
@@ -42,7 +41,7 @@ export class UserService {
         // Get all borrows for the user
         const borrows = await this.borrowRepository.find({
             where: {
-            user: { id: user.id },
+                user: { id: user.id },
             },
             relations: ["user", "book"]
         });
@@ -50,14 +49,14 @@ export class UserService {
         userObj.past = borrows
             .filter(borrow => borrow.returnDate && borrow.returnDate < new Date())
             .map(borrow => ({
-            bookName: borrow.book.name,
-            score: borrow.score,
+                name: borrow.book.name,
+                userScore: borrow.score,
             }));
 
         userObj.present = borrows
             .filter(borrow => !borrow.returnDate || borrow.returnDate >= new Date())
             .map(borrow => ({
-            bookName: borrow.book.name,
+                name: borrow.book.name,
             }));
 
 
@@ -72,8 +71,17 @@ export class UserService {
         return await this.userRepository.save(user);
     }
 
-    async userExists(userId: number): Promise<boolean> {
+    async checkUserExists(userId: number): Promise<boolean> {
         const user = await this.userRepository.findOneBy({ id: userId });
+        return !!user;
+    }
+
+    async checkUserExistsWithName(name: string): Promise<boolean> {
+        const user = await this.userRepository
+            .createQueryBuilder("user")
+            .where("LOWER(user.name) = LOWER(:name)", { name })
+            .select(["user.id"])
+            .getOne();
         return !!user;
     }
 

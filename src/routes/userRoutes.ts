@@ -23,7 +23,11 @@ router.get("/:id", async (req:any, res:any) => {
 
         await param("id").notEmpty().withMessage("User ID is required").run(req);
         await param("id").isNumeric().withMessage("User ID must be a number").run(req);
-        
+
+        if (!validationResult(req).isEmpty()) {
+            return res.status(400).json({ errors: validationResult(req).array() });
+        }
+
         const user = await new UserService().getUserById(req.params.id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
@@ -38,10 +42,18 @@ router.get("/:id", async (req:any, res:any) => {
 router.post(
     "/",
     body("name").notEmpty().withMessage("Name is required"),
+    body("name").customSanitizer(value => {
+        return value.replace(/<\/?[^>]+(>|$)/g, "");
+    }),
     async (req: any, res: any) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
+        }
+
+        const userExists = await new UserService().checkUserExistsWithName(req.body.name);
+        if (userExists) {
+            return res.status(400).json({ error: "User already exists with the same name" });
         }
 
         const { name } = req.body;
@@ -70,12 +82,12 @@ router.post("/:userId/borrow/:bookId", async (req: any, res: any) => {
         }
         const { userId, bookId } = req.params;
 
-        const userExists = await new UserService().userExists(userId);
+        const userExists = await new UserService().checkUserExists(userId);
         if (!userExists) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        const bookExists = await new BookService().bookExists(bookId);
+        const bookExists = await new BookService().checkBookExists(bookId);
         if (!bookExists) {
             return res.status(404).json({ error: "Book not found" });
         }
@@ -109,12 +121,12 @@ router.post("/:userId/return/:bookId", async (req: any, res: any) => {
             }
             const { userId, bookId } = req.params;
     
-            const userExists = await new UserService().userExists(userId);
+            const userExists = await new UserService().checkUserExists(userId);
             if (!userExists) {
                 return res.status(404).json({ error: "User not found" });
             }
     
-            const bookExists = await new BookService().bookExists(bookId);
+            const bookExists = await new BookService().checkBookExists(bookId);
             if (!bookExists) {
                 return res.status(404).json({ error: "Book not found" });
             }
