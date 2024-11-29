@@ -3,6 +3,15 @@
 
 This project is a RESTful API designed to manage a library's users, books, and borrowing operations. Built with Node.js, Express, TypeScript, and TypeORM, it utilizes a PostgreSQL database to handle data persistence.
 
+## Quick Start
+- Clone the repo. 
+- Install postgresql (or you can use DockerImage and run if you do not want to make installation)
+- Create Database in postresql
+- Configure .env file depending on your postgresql configuration
+- npm install  --> This will install the dependencies
+- npm start --> This will builld the application, run the migrations, create the database tables and start the app
+- Send API requets with postman
+
 ## Features
 
 - **User Management**: Create and list users.
